@@ -55,6 +55,23 @@ npm.cmd start
 
 The API starts at `https://localhost:8443`. Because the certificate is self-signed, disable SSL certificate verification in Postman or trust the certificate in your local client. Do not commit `.env` or PEM files.
 
+## Postman
+
+The Postman files are in the `postman/` folder:
+
+1. Import `HustleHub-Local.postman_environment.json`.
+2. Import `HustleHub-Part1.postman_collection.json`.
+3. Select the `HustleHub Local` environment in Postman.
+4. Confirm the `baseUrl` variable is `https://localhost:8443`.
+5. In Postman Settings, turn off SSL certificate verification for the self-signed local certificate.
+6. Run `Health`, then `Register Freelancer` or `Login`, and finally `Protected Dashboard`.
+
+The login and registration requests automatically save the returned JWT in the environment's `token` variable. The base URL for this local server is:
+
+```text
+https://localhost:8443
+```
+
 For development with automatic restart:
 
 ```powershell
