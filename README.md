@@ -66,6 +66,8 @@ The Postman files are in the `postman/` folder:
 5. In Postman Settings, turn off SSL certificate verification for the self-signed local certificate.
 6. Run `Health`, then `Register Freelancer` or `Login`, and finally `Protected Dashboard`.
 
+Each request includes a visible Postman test script under the request's **Scripts** tab. If the collection was imported before the latest update, delete the old imported collection and import `HustleHub-Part1.postman_collection.json` again; Postman does not automatically refresh imported files.
+
 The login and registration requests automatically save the returned JWT in the environment's `token` variable. The base URL for this local server is:
 
 ```text

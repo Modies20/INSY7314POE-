@@ -18,6 +18,18 @@
   "item": [
     {
       "name": "Health",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Health endpoint is available', function () { pm.response.to.have.status(200); });",
+              "pm.test('API reports running status', function () { pm.expect(pm.response.json().status).to.eql('ok'); });"
+            ]
+          }
+        }
+      ],
       "request": {
         "method": "GET",
         "header": [],
@@ -66,7 +78,7 @@
             "type": "text/javascript",
             "exec": [
               "pm.test('Login succeeded', function () { pm.response.to.have.status(200); });",
-              "pm.environment.set('token', pm.response.json().token);"
+              "if (pm.response.code === 200) { pm.environment.set('token', pm.response.json().token); }"
             ]
           }
         }
@@ -88,6 +100,18 @@
     },
     {
       "name": "Protected Dashboard",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Dashboard request is authorized', function () { pm.response.to.have.status(200); });",
+              "pm.test('Dashboard includes authenticated user', function () { pm.expect(pm.response.json().user).to.have.property('email'); });"
+            ]
+          }
+        }
+      ],
       "request": {
         "method": "GET",
         "header": [
