@@ -16,6 +16,15 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: '10kb' }));
 
+app.get('/', (req, res) => {
+  res.json({
+    name: 'HustleHub+ API',
+    status: 'running',
+    health: '/health',
+    auth: '/api/auth',
+    protected: '/api/protected'
+  });
+});
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
