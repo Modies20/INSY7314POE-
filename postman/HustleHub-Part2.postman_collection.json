@@ -16,8 +16,8 @@
       "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"email\": \"freelancer-{{timestamp}}@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"role\": \"freelancer\"\n}" }, "url": "{{baseUrl}}/api/auth/register" }
     },
     {
-      "name": "Create Gig",
-      "event": [{ "listen": "test", "script": { "exec": ["pm.response.to.have.status(201);", "pm.environment.set('gigId', pm.response.json().gig._id);"] } }],
+      "name": "RBAC Violation - Freelancer Cannot Create Gig",
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Freelancer is forbidden from creating gigs', function () { pm.response.to.have.status(403); });", "pm.expect(pm.response.json().message).to.eql('Forbidden: Insufficient permissions');"] } }],
       "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{freelancerToken}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"title\": \"Brand identity sprint\",\n  \"description\": \"A focused visual identity package for an early-stage team.\",\n  \"price\": 250\n}" }, "url": "{{baseUrl}}/api/gigs" }
     },
     {
@@ -26,14 +26,24 @@
       "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"email\": \"client-{{timestamp}}@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"role\": \"client\"\n}" }, "url": "{{baseUrl}}/api/auth/register" }
     },
     {
+      "name": "Create Gig as Client",
+      "event": [{ "listen": "test", "script": { "exec": ["pm.response.to.have.status(201);", "pm.environment.set('gigId', pm.response.json().gig._id);"] } }],
+      "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"title\": \"Brand identity sprint\",\n  \"description\": \"A focused visual identity package for an early-stage team.\",\n  \"price\": 250\n}" }, "url": "{{baseUrl}}/api/gigs" }
+    },
+    {
+      "name": "Register Booking Client",
+      "event": [{ "listen": "test", "script": { "exec": ["pm.expect(pm.response.code).to.be.oneOf([201, 400]);", "if (pm.response.code === 201) pm.environment.set('bookingClientToken', pm.response.json().token);"] } }],
+      "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"email\": \"booking-client-{{timestamp}}@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"role\": \"client\"\n}" }, "url": "{{baseUrl}}/api/auth/register" }
+    },
+    {
       "name": "Browse Gigs",
       "event": [{ "listen": "test", "script": { "exec": ["pm.response.to.have.status(200);"] } }],
-      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }], "url": "{{baseUrl}}/api/gigs" }
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{bookingClientToken}}" }], "url": "{{baseUrl}}/api/gigs" }
     },
     {
       "name": "Book Gig",
       "event": [{ "listen": "test", "script": { "exec": ["pm.response.to.have.status(201);"] } }],
-      "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"gigId\": \"{{gigId}}\"\n}" }, "url": "{{baseUrl}}/api/bookings" }
+      "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{bookingClientToken}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"gigId\": \"{{gigId}}\"\n}" }, "url": "{{baseUrl}}/api/bookings" }
     },
     {
       "name": "Freelancer Bookings",

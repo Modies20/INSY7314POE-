@@ -58,3 +58,21 @@ test('rejects weak registration and missing authentication', async () => {
   const protectedResponse = await fetch(`${baseUrl}/api/protected/dashboard`);
   assert.equal(protectedResponse.status, 401);
 });
+
+test('rejects freelancer gig creation with 403', async () => {
+  const registerResponse = await fetch(`${baseUrl}/api/auth/register`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email: 'freelancer@example.com', password: 'SecurePass123!', role: 'freelancer' })
+  });
+  const { token } = await registerResponse.json();
+
+  const gigResponse = await fetch(`${baseUrl}/api/gigs`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+    body: JSON.stringify({ title: 'Blocked gig', description: 'Should be rejected', price: 100 })
+  });
+
+  assert.equal(gigResponse.status, 403);
+  assert.equal((await gigResponse.json()).message, 'Forbidden: Insufficient permissions');
+});
