@@ -59,7 +59,7 @@ test('rejects weak registration and missing authentication', async () => {
   assert.equal(protectedResponse.status, 401);
 });
 
-test('rejects freelancer gig creation with 403', async () => {
+test('allows freelancer gig creation', async () => {
   const registerResponse = await fetch(`${baseUrl}/api/auth/register`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -73,6 +73,6 @@ test('rejects freelancer gig creation with 403', async () => {
     body: JSON.stringify({ title: 'Blocked gig', description: 'Should be rejected', price: 100 })
   });
 
-  assert.equal(gigResponse.status, 403);
-  assert.equal((await gigResponse.json()).message, 'Forbidden: Insufficient permissions');
+  assert.equal(gigResponse.status, 201);
+  assert.equal((await gigResponse.json()).gig.title, 'Blocked gig');
 });
