@@ -2,13 +2,18 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { app } = require('../server');
 const User = require('../src/models/userModel');
+const mongoose = require('mongoose');
+const { MongoMemoryServer } = require('mongodb-memory-server');
 
 let server;
 let baseUrl;
+let mongoServer;
 
 test.before(async () => {
   process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret';
-  User.clear();
+  mongoServer = await MongoMemoryServer.create();
+  await mongoose.connect(mongoServer.getUri());
+  await User.deleteMany({});
   server = app.listen(0);
   await new Promise((resolve) => server.once('listening', resolve));
   baseUrl = `http://127.0.0.1:${server.address().port}`;
@@ -16,6 +21,8 @@ test.before(async () => {
 
 test.after(async () => {
   await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  await mongoose.disconnect();
+  await mongoServer.stop();
 });
 
 test('registers, logs in, and accesses the protected dashboard', async () => {

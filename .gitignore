@@ -3,4 +3,5 @@ node_modules/
 src/config/cert/*.pem
 npm-debug.log*
 coverage/
+frontend/dist/
 .DS_Store

@@ -1,0 +1,50 @@
+{
+  "info": {
+    "name": "HustleHub+ Part 2",
+    "description": "MongoDB marketplace workflow: authentication, gigs, bookings, and transactions.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "event": [{ "listen": "test", "script": { "exec": ["pm.response.to.have.status(200);"] } }],
+      "request": { "method": "GET", "url": "{{baseUrl}}/health" }
+    },
+    {
+      "name": "Register Freelancer",
+      "event": [{ "listen": "test", "script": { "exec": ["pm.expect(pm.response.code).to.be.oneOf([201, 400]);", "if (pm.response.code === 201) pm.environment.set('freelancerToken', pm.response.json().token);"] } }],
+      "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"email\": \"freelancer-{{timestamp}}@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"role\": \"freelancer\"\n}" }, "url": "{{baseUrl}}/api/auth/register" }
+    },
+    {
+      "name": "Create Gig",
+      "event": [{ "listen": "test", "script": { "exec": ["pm.response.to.have.status(201);", "pm.environment.set('gigId', pm.response.json().gig._id);"] } }],
+      "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{freelancerToken}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"title\": \"Brand identity sprint\",\n  \"description\": \"A focused visual identity package for an early-stage team.\",\n  \"price\": 250\n}" }, "url": "{{baseUrl}}/api/gigs" }
+    },
+    {
+      "name": "Register Client",
+      "event": [{ "listen": "test", "script": { "exec": ["pm.expect(pm.response.code).to.be.oneOf([201, 400]);", "if (pm.response.code === 201) pm.environment.set('clientToken', pm.response.json().token);"] } }],
+      "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"email\": \"client-{{timestamp}}@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"role\": \"client\"\n}" }, "url": "{{baseUrl}}/api/auth/register" }
+    },
+    {
+      "name": "Browse Gigs",
+      "event": [{ "listen": "test", "script": { "exec": ["pm.response.to.have.status(200);"] } }],
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }], "url": "{{baseUrl}}/api/gigs" }
+    },
+    {
+      "name": "Book Gig",
+      "event": [{ "listen": "test", "script": { "exec": ["pm.response.to.have.status(201);"] } }],
+      "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"gigId\": \"{{gigId}}\"\n}" }, "url": "{{baseUrl}}/api/bookings" }
+    },
+    {
+      "name": "Freelancer Bookings",
+      "event": [{ "listen": "test", "script": { "exec": ["pm.response.to.have.status(200);"] } }],
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{freelancerToken}}" }], "url": "{{baseUrl}}/api/bookings" }
+    },
+    {
+      "name": "Freelancer Transactions",
+      "event": [{ "listen": "test", "script": { "exec": ["pm.response.to.have.status(200);"] } }],
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{freelancerToken}}" }], "url": "{{baseUrl}}/api/bookings/transactions" }
+    }
+  ],
+  "event": [{ "listen": "prerequest", "script": { "exec": ["pm.environment.set('timestamp', Date.now());"] } }]
+}

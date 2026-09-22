@@ -1,15 +1,9 @@
-let users = [];
+const mongoose = require('mongoose');
 
-const User = {
-  findByEmail: (email) => users.find((user) => user.email === email),
-  create: (userData) => {
-    const newUser = { id: users.length + 1, ...userData };
-    users.push(newUser);
-    return newUser;
-  },
-  clear: () => {
-    users = [];
-  }
-};
+const userSchema = new mongoose.Schema({
+  email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+  password: { type: String, required: true, select: false },
+  role: { type: String, enum: ['client', 'freelancer', 'admin'], default: 'client' }
+}, { timestamps: true });
 
-module.exports = User;
+module.exports = mongoose.models.User || mongoose.model('User', userSchema);

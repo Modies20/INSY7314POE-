@@ -3,7 +3,7 @@ const User = require('../models/userModel');
 const { hashPassword, comparePassword } = require('../utils/passwordUtils');
 const { generateToken } = require('../utils/jwtUtils');
 
-const publicUser = (user) => ({ id: user.id, email: user.email, role: user.role });
+const publicUser = (user) => ({ id: user._id.toString(), email: user.email, role: user.role });
 
 const sendValidationErrors = (req, res) => {
   const errors = validationResult(req);
@@ -20,11 +20,11 @@ exports.register = async (req, res, next) => {
     if (sendValidationErrors(req, res)) return;
 
     const { email, password, role = 'client' } = req.body;
-    if (User.findByEmail(email)) {
+    if (await User.exists({ email })) {
       return res.status(400).json({ message: 'Email already registered' });
     }
 
-    const user = User.create({ email, password: await hashPassword(password), role });
+    const user = await User.create({ email, password: await hashPassword(password), role });
     const token = generateToken(publicUser(user));
 
     return res.status(201).json({
@@ -42,7 +42,7 @@ exports.login = async (req, res, next) => {
     if (sendValidationErrors(req, res)) return;
 
     const { email, password } = req.body;
-    const user = User.findByEmail(email);
+    const user = await User.findOne({ email }).select('+password');
     if (!user || !(await comparePassword(password, user.password))) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }

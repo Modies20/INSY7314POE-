@@ -1,6 +1,6 @@
-# HustleHub+ Backend
+# HustleHub+ Full Stack
 
-Secure foundations API for the HustleHub+ platform. Part 1 supports account registration, login, and a JWT-protected dashboard for Clients, Freelancers, and Admins.
+Secure MERN marketplace for the HustleHub+ platform. The Part 2 release adds MongoDB persistence, role-based gig and booking workflows, security controls, and a React client.
 
 ## System Overview
 
@@ -8,16 +8,16 @@ The API is an Express application served over HTTPS in local development. Users 
 
 ```mermaid
 flowchart LR
-  Client[Client / Freelancer / Admin] -->|HTTPS JSON| API[Express API]
+  Client[React Frontend] -->|Axios HTTPS JSON| API[Express API]
   API --> Auth[Auth routes]
-  API --> Protected[Protected routes]
-  Auth --> Store[(In-memory user store)]
+  API --> Marketplace[Gig / Booking routes]
+  API --> Store[(MongoDB via Mongoose)]
   Auth --> Hash[bcrypt password hashing]
   Auth --> Token[JWT signing]
   Protected --> Verify[JWT verification middleware]
 ```
 
-The in-memory store is intentionally temporary for Part 1. Restarting the server clears users.
+The frontend uses JWTs stored in browser local storage and sends them through an Axios interceptor. MongoDB persists users, gigs, bookings, and transactions.
 
 ## Project Structure
 
@@ -135,12 +135,52 @@ npm.cmd test
 
 The tests cover registration, login, JWT-protected access, validation rejection, and missing authentication.
 
+## Part 2 Setup
+
+1. Install and start MongoDB locally, or create a MongoDB Atlas database.
+2. Copy `.env.example` to `.env` and set `MONGO_URI` to the local or Atlas connection string. Set a long random `JWT_SECRET`.
+3. Generate the local certificate with `npm.cmd run cert:generate`.
+4. Start the API with `npm.cmd start`.
+5. In a second terminal, run `Set-Location frontend; npm.cmd install; npm.cmd run dev`.
+
+The frontend runs on the Vite URL shown in the terminal. Set `frontend/.env` from `frontend/.env.example` if the API URL differs from `https://localhost:8443/api`.
+
+## Marketplace and RBAC
+
+- Clients can browse gigs, create bookings, and view their bookings.
+- Freelancers can create, update, and delete their own gigs, view incoming bookings, and view transaction earnings.
+- Admins can manage gigs and view marketplace records through the protected API.
+- Gigs belong to their creating freelancer; ownership is checked on update and delete.
+- Booking creation records both a confirmed booking and an earning transaction.
+
+## Security Controls
+
+JWT authentication, bcrypt password hashing, HTTPS, Helmet CSP headers, CORS, 10 KB JSON limits, express-validator input validation, MongoDB query sanitisation, and a 10-request-per-15-minute authentication rate limit are enabled.
+
+## Part 2 Postman
+
+Import `postman/HustleHub-Local.postman_environment.json` and `postman/HustleHub-Part2.postman_collection.json`. Select the environment, disable SSL certificate verification for the local self-signed certificate, and run requests in order: Health, Register Freelancer, Create Gig, Register Client, Browse Gigs, Book Gig, Freelancer Bookings, Freelancer Transactions. The collection saves tokens and the gig ID automatically.
+
+## Testing
+
+```powershell
+npm.cmd test
+npm.cmd run test:jest
+Set-Location frontend; npm.cmd test; npm.cmd run build
+```
+
+The backend Node test uses `mongodb-memory-server`, so it does not require a running MongoDB instance. Newman can run the prepared collection after the API and MongoDB are running:
+
+```powershell
+newman run postman/HustleHub-Part2.postman_collection.json -e postman/HustleHub-Local.postman_environment.json
+```
+
 ## Submission Checklist
 
 - [x] Dependencies and scripts configured
 - [x] Environment template and Git exclusions added
 - [x] HTTPS certificate generation documented and automated
-- [x] In-memory user store implemented
+- [x] MongoDB persistence and Mongoose models implemented
 - [x] bcrypt password hashing implemented
 - [x] JWT generation and verification implemented
 - [x] Registration and login routes implemented
@@ -149,3 +189,5 @@ The tests cover registration, login, JWT-protected access, validation rejection,
 - [x] Protected route implemented
 - [x] Automated API tests included
 - [x] README documentation included
+- [x] React frontend, marketplace workflow, and frontend test included
+- [x] Part 2 Postman collection included
