@@ -1,20 +1,15 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
-const { MongoMemoryServer } = require('mongodb-memory-server');
 const { app } = require('../server');
 const User = require('../src/models/userModel');
 
-let mongoServer;
-
 beforeAll(async () => {
   process.env.JWT_SECRET = 'jest-test-secret';
-  mongoServer = await MongoMemoryServer.create();
-  await mongoose.connect(mongoServer.getUri());
+  await mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/hustlehub');
 });
 
 afterAll(async () => {
   await mongoose.disconnect();
-  await mongoServer.stop();
 });
 
 beforeEach(async () => {
