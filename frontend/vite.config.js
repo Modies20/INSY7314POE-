@@ -3,5 +3,14 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://localhost:8443',
+        secure: false,
+        changeOrigin: true
+      }
+    }
+  },
   test: { environment: 'jsdom', setupFiles: './src/testSetup.js', globals: true }
 });
