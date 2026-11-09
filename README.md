@@ -194,12 +194,52 @@ npm.cmd test
 npm.cmd run test:jest
 Set-Location frontend; npm.cmd test; npm.cmd run build
 ```
+---
 
+# 🚀 Part 3: DevSecOps, Monitoring, and Finalisation
+
+This section details the finalisation of the HustleHub+ platform, focusing on financial insights, automated CI/CD pipelines, containerization, comprehensive logging, and a final security review.
+
+## 1. Financial Insights & Tax Estimation
+To provide freelancers with financial clarity, the system calculates estimated tax obligations based on their total income generated from bookings.
+
+**Tax Calculation Logic:**
+The backend utilizes a custom algorithm based on the South African Revenue Service (SARS) 2024/2025 individual tax brackets. 
+- Income is aggregated from the `Transaction` collection.
+- The calculation applies progressive tax rates (e.g., 18% for income up to R237,100, scaling up to 45% for income above R1,817,000).
+- The frontend consumes this API endpoint and visually displays the `Total Income`, `Estimated Tax`, and `Net Income` using a bar chart (via the Recharts library) for easy interpretation.
+
+
+## 2. CI/CD Pipeline (GitHub Actions)
+The project implements a robust Continuous Integration/Continuous Deployment (CI/CD) pipeline using **GitHub Actions** (`.github/workflows/ci.yml`). The pipeline triggers automatically on pushes and pull requests to the `main` branch.
+
+**Pipeline Stages:**
+1. **Dependency Installation:** Ensures clean installation of backend and frontend packages.
+2. **Static Code Analysis:** Runs **ESLint** to analyze code for syntax errors, security vulnerabilities, and code style issues before deployment. The pipeline is configured to **fail** if linting errors are found.
+3. **Automated Testing:** Executes backend unit/API tests (Jest/Supertest) and frontend component tests (Vitest).
+4. **Build Process:** Compiles the React frontend to ensure there are no production build errors.
+5. **Docker Verification:** Builds the Docker images to ensure the containerization configuration is valid.
+
+**Static Analysis Results:**
+*( "ESLint ran successfully with 0 errors. The results indicate that the codebase adheres to standard JavaScript security practices, with no unused variables or unsafe assignments detected.")*
+
+## 3. Containerization (Docker & Docker Compose)
+The entire application stack is containerized to ensure consistency across different environments and simplify deployment.
+
+- **Backend Dockerfile:** Uses a Node.js Alpine image to keep the footprint small.
+- **Frontend Dockerfile:** Uses a multi-stage build (Node.js for building the React app, then Nginx for serving the static files securely).
+- **Docker Compose:** Orchestrates the MongoDB database, Express backend, and React frontend. 
+
+To run the full stack via Docker:
+```bash
+docker-compose up --build -d
 The backend API tests require a MongoDB instance at `MONGO_TEST_URI` (default: `mongodb://127.0.0.1:27017/hustlehub_test`); the CI workflow starts MongoDB for these tests. The tax-bracket and endpoint response tests run without a database. Newman can run the prepared collection after the API and MongoDB are running:
 
 ```powershell
 npx.cmd newman run postman/HustleHub-Part2.postman_collection.json -e postman/HustleHub-Local.postman_environment.json --insecure
 ```
+Video Link:https://youtu.be/tpz4MQ5F51g
+
 
 ## Submission Checklist
 
@@ -217,3 +257,15 @@ npx.cmd newman run postman/HustleHub-Part2.postman_collection.json -e postman/Hu
 - [x] README documentation included
 - [x] React frontend, marketplace workflow, and frontend test included
 - [x] Part 2 Postman collection included
+- [x] Updated README: Comprehensive documentation
+- [x] Backend & Frontend Code: Final working versions.
+- [x] Pipeline Configuration: .github/workflows/ci.yml.
+- [x] Static Analysis Result: A screenshot of the ESLint/CodeQL output in the GitHub Actions tab.
+- [x] Docker Files: backend/Dockerfile, frontend/Dockerfile, and docker-compose.yml.
+- [x] Logging Evidence: Screenshots of the logs/combined.log file showing a login attempt and a booking transaction.
+- [x] Postman & Newman Evidence: Exported JSON and a screenshot of the Newman CLI run.
+- [x] Screenshots: Frontend dashboard showing the Tax Bar Chart, MongoDB Compass showing the transaction data.
+- [x] Demonstration Video: Show the full flow (Register → Create Gig → Book → View Income/Tax).
+
+
+
