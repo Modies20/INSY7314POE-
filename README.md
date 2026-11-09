@@ -26,7 +26,7 @@ src/
 ├── config/cert/       Local HTTPS key and certificate (ignored by Git)
 ├── controllers/       Registration, login, and dashboard behavior
 ├── middleware/        Validation, authentication, and error handling
-├── models/            In-memory user model
+├── models/            MongoDB user, gig, booking, and transaction models
 ├── routes/            Express route definitions
 └── utils/             Password and JWT helpers
 scripts/               Local certificate generation
@@ -40,7 +40,8 @@ server.js              Express app and HTTPS entry point
 - **Input validation:** `express-validator` enforces normalized email addresses, eight-character minimum passwords, uppercase/lowercase/number/special-character requirements, and approved roles.
 - **HTTPS:** a self-signed localhost certificate encrypts local traffic. It is suitable for development only; production should use a certificate issued by a trusted authority.
 - **Error handling:** production responses hide stack traces and use a generic message. Development responses include the stack to aid debugging.
-- **Additional controls:** Helmet security headers, CORS support, and a 10 KB JSON body limit are enabled.
+- **Additional controls:** Helmet security headers, CORS support, a 10 KB JSON body limit, HTTP parameter pollution protection, and account lockout after five failed logins for 15 minutes are enabled.
+- **Audit logging:** Winston records login outcomes, bookings, transactions, and request errors as timestamped JSON in `logs/`; the logs are excluded from Git.
 
 ## Setup
 
@@ -54,6 +55,8 @@ npm.cmd start
 ```
 
 The API starts at `https://localhost:8443`. Because the certificate is self-signed, disable SSL certificate verification in Postman or trust the certificate in your local client. Do not commit `.env` or PEM files.
+
+For a backend started directly from VS Code, `MONGO_URI` should point to the host MongoDB instance, for example `mongodb://127.0.0.1:27017/hustlehub`. Docker Compose supplies `mongodb://mongodb:27017/hustlehub` to the backend container so it connects to the Compose MongoDB service; do not use `127.0.0.1` from inside that container.
 
 ## Postman
 
@@ -121,6 +124,10 @@ Authorization: Bearer <token>
 
 Returns `200` with the authenticated JWT claims. Missing or invalid tokens return `401`.
 
+### Freelancer tax estimate
+
+`GET /api/tax/estimate` requires a freelancer JWT and returns `totalIncome`, `estimatedTax`, and `netIncome`. The estimate applies the provided SARS 2024/25 individual tax brackets to all recorded earning transactions for that freelancer. It is an estimate before rebates and tax credits; transaction totals are not filtered by tax-year dates.
+
 ### Health
 
 `GET /health` returns `{ "status": "ok" }` and is useful for a basic availability check.
@@ -133,7 +140,7 @@ Run the automated API checks with:
 npm.cmd test
 ```
 
-The tests cover registration, login, JWT-protected access, validation rejection, and missing authentication.
+The tests cover the SARS tax-bracket calculation and the API's registration, login, JWT-protected access, validation rejection, and missing authentication.
 
 ## Part 2 Setup
 
@@ -144,6 +151,7 @@ The tests cover registration, login, JWT-protected access, validation rejection,
 5. In a second terminal, run `Set-Location frontend; npm.cmd install; npm.cmd run dev`.
 
 The frontend runs on the Vite URL shown in the terminal. Set `frontend/.env` from `frontend/.env.example` if the API URL differs from `https://localhost:8443/api`.
+Freelancers can open the dedicated **Tax estimate** page from the navigation to see booking income, estimated tax, net income, and the calculation notes. The estimate updates when clients book their gigs; only the freelancer can view their tax figures.
 
 ## Marketplace and RBAC
 
@@ -155,11 +163,29 @@ The frontend runs on the Vite URL shown in the terminal. Set `frontend/.env` fro
 
 ## Security Controls
 
-JWT authentication, bcrypt password hashing, HTTPS, Helmet CSP headers, CORS, 10 KB JSON limits, express-validator input validation, MongoDB query sanitisation, and a 10-request-per-15-minute authentication rate limit are enabled.
+JWT authentication, bcrypt password hashing, HTTPS, Helmet CSP headers, CORS, 10 KB JSON limits, express-validator input validation, MongoDB query sanitisation, HTTP parameter pollution protection, a 10-request-per-15-minute authentication rate limit, and 15-minute account lockout after five incorrect passwords are enabled.
+
+## Logging and monitoring
+
+Winston writes timestamped JSON events to `logs/combined.log` and errors to `logs/error.log`, as well as to the console. Login-attempt records help identify repeated credential guessing; booking and transaction records provide an audit trail for marketplace activity and financial disputes; error records help diagnose failed requests. Keep log files access-controlled and apply an appropriate retention policy because they contain account and transaction identifiers.
+
+## CI, static analysis, and containers
+
+GitHub Actions runs backend tests and ESLint, frontend tests, ESLint and a production build, then builds the backend and frontend Docker images on pushes and pull requests to `main`. The CI backend test job starts MongoDB as a service.
+
+To run the three services locally, set a strong `JWT_SECRET` in the shell or in the root `.env` file, then run. Compose loads the secret from `.env` but overrides the host-local `MONGO_URI` with its internal MongoDB service address:
+
+```powershell
+docker compose up --build
+```
+
+The React app is served at `http://127.0.0.1:5173`, the HTTPS API at `https://localhost:8443`, and MongoDB uses a persistent Compose volume. The frontend Nginx server proxies `/api` requests to the backend. The backend image generates its own self-signed HTTPS certificate; use a trusted certificate and secure secret management for a production deployment.
+
+Submission screenshots of successful GitHub Actions runs and running containers must be captured from the GitHub repository and Docker environment; they cannot be generated by the source changes alone.
 
 ## Part 2 Postman
 
-Import `postman/HustleHub-Local.postman_environment.json` and `postman/HustleHub-Part2.postman_collection.json`. Select the environment, disable SSL certificate verification for the local self-signed certificate, and run requests in order: Health, Register Freelancer, Create Gig, Register Client, Browse Gigs, Book Gig, Freelancer Bookings, Freelancer Transactions. The collection saves tokens and the gig ID automatically.
+Import `postman/HustleHub-Local.postman_environment.json` and `postman/HustleHub-Part2.postman_collection.json`. Select the environment, disable SSL certificate verification for the local self-signed certificate, and run requests in order: Health, Register Freelancer, Create Gig, Register Client, Browse Gigs, Book Gig, Freelancer Bookings, Freelancer Transactions, Freelancer Tax Estimate. The collection saves tokens and the gig ID automatically and checks the tax response fields.
 
 ## Testing
 
@@ -169,10 +195,10 @@ npm.cmd run test:jest
 Set-Location frontend; npm.cmd test; npm.cmd run build
 ```
 
-The backend Node test uses `mongodb-memory-server`, so it does not require a running MongoDB instance. Newman can run the prepared collection after the API and MongoDB are running:
+The backend API tests require a MongoDB instance at `MONGO_TEST_URI` (default: `mongodb://127.0.0.1:27017/hustlehub_test`); the CI workflow starts MongoDB for these tests. The tax-bracket and endpoint response tests run without a database. Newman can run the prepared collection after the API and MongoDB are running:
 
 ```powershell
-newman run postman/HustleHub-Part2.postman_collection.json -e postman/HustleHub-Local.postman_environment.json
+npx.cmd newman run postman/HustleHub-Part2.postman_collection.json -e postman/HustleHub-Local.postman_environment.json --insecure
 ```
 
 ## Submission Checklist
