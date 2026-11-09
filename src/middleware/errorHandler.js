@@ -1,5 +1,12 @@
+const logger = require('../utils/logger');
+
 const errorHandler = (err, req, res, next) => {
-  console.error(err.stack || err);
+  logger.error('Request failed', {
+    error: err.message || 'Internal Server Error',
+    stack: err.stack,
+    method: req.method,
+    path: req.path
+  });
 
   const status = Number.isInteger(err.status) ? err.status : 500;
   const response = {

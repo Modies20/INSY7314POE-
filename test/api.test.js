@@ -9,7 +9,7 @@ let baseUrl;
 
 test.before(async () => {
   process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret';
-  await mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/hustlehub');
+  await mongoose.connect(process.env.MONGO_TEST_URI || 'mongodb://127.0.0.1:27017/hustlehub_test');
   await User.deleteMany({});
   server = app.listen(0);
   await new Promise((resolve) => server.once('listening', resolve));

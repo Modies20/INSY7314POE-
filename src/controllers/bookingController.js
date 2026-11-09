@@ -1,6 +1,7 @@
 const Booking = require('../models/Booking');
 const Gig = require('../models/Gig');
 const Transaction = require('../models/Transaction');
+const logger = require('../utils/logger');
 
 exports.createBooking = async (req, res, next) => {
   try {
@@ -16,7 +17,23 @@ exports.createBooking = async (req, res, next) => {
       amount: gig.price,
       status: 'confirmed'
     });
-    await Transaction.create({ bookingId: booking._id, freelancerId: gig.freelancerId, amount: gig.price });
+    const transaction = await Transaction.create({
+      bookingId: booking._id,
+      freelancerId: gig.freelancerId,
+      amount: gig.price
+    });
+    logger.info('Booking created', {
+      bookingId: booking._id.toString(),
+      clientId: req.user.id,
+      freelancerId: gig.freelancerId.toString(),
+      amount: gig.price
+    });
+    logger.info('Transaction recorded', {
+      transactionId: transaction._id.toString(),
+      bookingId: booking._id.toString(),
+      freelancerId: gig.freelancerId.toString(),
+      amount: transaction.amount
+    });
     return res.status(201).json({ message: 'Booking successful', booking });
   } catch (error) {
     return next(error);

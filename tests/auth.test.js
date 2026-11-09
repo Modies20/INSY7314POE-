@@ -5,7 +5,7 @@ const User = require('../src/models/userModel');
 
 beforeAll(async () => {
   process.env.JWT_SECRET = 'jest-test-secret';
-  await mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/hustlehub');
+  await mongoose.connect(process.env.MONGO_TEST_URI || 'mongodb://127.0.0.1:27017/hustlehub_test');
 });
 
 afterAll(async () => {
